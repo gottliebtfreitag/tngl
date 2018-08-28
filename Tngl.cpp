@@ -6,11 +6,12 @@
 #include <stdexcept>
 #include <regex>
 
+#include <cxxabi.h>
+#include <iostream>
+
 namespace tngl
 {
 
-#include <cxxabi.h>
-#include <iostream>
 
 namespace
 {
@@ -126,13 +127,6 @@ Tngl::Tngl(std::set<std::string> const& names)
 			}
 		}
 	}
-
-	// call initialize on each node
-	for (auto& b : nodes) {
-		std::cout << "init: " << b.first << "\n";
-		b.second->initialize();
-	}
-
 }
 
 Tngl::~Tngl() {
@@ -152,10 +146,11 @@ Node* Tngl::getNodeByName_(std::string const& name) {
 	return nullptr;
 }
 
-std::set<std::string> Tngl::getAllNodeTypeNames() {
-	return {};
+void Tngl::initialize() {
+	for (auto& b : pimpl->nodes) {
+		std::cout << "init: " << b.first << "\n";
+		b.second->initialize();
+	}
 }
 
 }
-
-

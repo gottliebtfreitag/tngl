@@ -18,7 +18,7 @@ struct Tngl final {
 		return dynamic_cast<T*>(getNodeByName_(name));
 	}
 
-	static std::set<std::string> getAllNodeTypeNames();
+	void initialize();
 private:
 	Node* getNodeByName_(std::string const& name);
 	struct Pimpl;
