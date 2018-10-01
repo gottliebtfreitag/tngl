@@ -4,6 +4,7 @@
 
 #include "Link.h"
 
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <string>
@@ -20,15 +21,18 @@ public:
 
 	virtual ~Node() = default;
 
-	virtual void initialize() {};
-	virtual void deinitialize() noexcept {};
+	virtual void initializeNode() {};
+	virtual void deinitializeNode() noexcept {};
 
-	auto getLinks() const -> decltype(links) {
+	auto getLinks() const -> decltype(links) const& {
 		return links;
 	}
 
 	void addLink(LinkBase* link) {
 		links.emplace_back(link);
+	}
+	void removeLink(LinkBase* link) {
+		links.erase(std::remove(links.begin(), links.end(), link), links.end());
 	}
 };
 

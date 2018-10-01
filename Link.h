@@ -24,7 +24,7 @@ constexpr Flags operator&(Flags const& l, Flags const& r) {
 
 struct LinkBase {
 	LinkBase(Node* owner, Flags _flags=Flags::None, std::string const& _regex="");
-	virtual ~LinkBase() = default;
+	virtual ~LinkBase();
 
 	Flags getFlags() const {
 		return flags;
@@ -34,15 +34,22 @@ struct LinkBase {
 	virtual void setOther(Node*) = 0;
 	virtual bool satisfied() = 0;
 
+	virtual bool isConnectedTo(Node const*) const = 0;
+
 	bool matchesName(std::string const& name) const {
 		return std::regex_match(name, regex);
 	}
 
 	virtual std::type_info const& getType() const = 0;
 
+	std::string const& getRegex() const {
+		return regexStr;
+	}
 private:
-	Flags flags;
+	Flags flags {Flags::None};
 	std::regex regex;
+	std::string regexStr;
+	Node* owner {nullptr};
 };
 
 template<typename T=Node>
@@ -58,33 +65,40 @@ struct Link : LinkBase {
 	void setOther(Node* other) override {
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
-			block = otherCast;
+			node = otherCast;
 		}
 	}
 
 	bool satisfied() override {
-		return block;
+		return node;
 	}
 
-	T      * operator->()       { return block; }
-	T const* operator->() const { return block; }
+	bool isConnectedTo(Node const* other) const override {
+		return other == dynamic_cast<Node const*>(node);
+	}
 
-	T      & operator *()       { return *block; }
-	T const& operator *() const { return *block; }
+	T      * operator->()       { return node; }
+	T const* operator->() const { return node; }
 
-	operator T      * ()        { return block; }
-	operator T const* () const  { return block; }
+	T      & operator *()       { return *node; }
+	T const& operator *() const { return *node; }
+
+	operator T      * ()        { return node; }
+	operator T const* () const  { return node; }
 private:
-	T* block {nullptr};
+	T* node {nullptr};
 };
 
 template<typename T=Node>
 struct Links : LinkBase {
 private:
-	std::vector<T*> blocks;
+	std::vector<T*> nodes;
 public:
 	Links(Node* owner, std::string const& _regex=".*")
 	: LinkBase(owner, Flags::None, _regex)
+	{}
+	Links(Node* owner, Flags flags, std::string const& _regex=".*")
+	: LinkBase(owner, flags, _regex)
 	{}
 
 	std::type_info const& getType() const override {
@@ -96,7 +110,7 @@ public:
 	void setOther(Node* other) override {
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
-			blocks.emplace_back(otherCast);
+			nodes.emplace_back(otherCast);
 		}
 	}
 
@@ -104,12 +118,17 @@ public:
 		return false;
 	}
 
-	std::vector<T*> const& getBlocks() {
-		return blocks;
+	bool isConnectedTo(Node const* other) const override {
+		auto it = std::find_if(nodes.begin(), nodes.end(), [&](T const* o) { return other == dynamic_cast<Node const*>(o);});
+		return it != nodes.end();
 	}
 
-	auto begin() -> decltype(blocks.begin()) { return blocks.begin(); }
-	auto end() -> decltype(blocks.end()) { return blocks.end(); }
+	std::vector<T*> const& getNodes() {
+		return nodes;
+	}
+
+	auto begin() -> decltype(nodes.begin()) { return nodes.begin(); }
+	auto end() -> decltype(nodes.end()) { return nodes.end(); }
 
 };
 

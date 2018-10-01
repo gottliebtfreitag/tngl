@@ -19,6 +19,9 @@ struct Tngl final {
 	}
 
 	void initialize();
+	void deinitialize();
+
+	std::map<std::string, Node*> getNodes() const;
 private:
 	Node* getNodeByName_(std::string const& name);
 	struct Pimpl;
