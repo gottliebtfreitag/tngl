@@ -1,5 +1,6 @@
 #pragma once
 
+namespace tngl {
 
 template<typename T>
 struct Singleton {
@@ -12,3 +13,4 @@ protected:
 	~Singleton() = default;
 };
 
+}
