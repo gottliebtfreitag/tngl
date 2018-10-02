@@ -121,7 +121,8 @@ Tngl::Tngl(std::set<std::string> const& names)
 				if (tngl::Flags::Required == (link->getFlags() & tngl::Flags::Required)) {
 					bool canSatisfy = false;
 					for (auto const& otherNode : nodes) {
-						if (link->canSetOther(otherNode.second.get())) {
+						if (link->matchesName(otherNode.first) and
+							link->canSetOther(otherNode.second.get())) {
 							canSatisfy = true;
 							break;
 						}
