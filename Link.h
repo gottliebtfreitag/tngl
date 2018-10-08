@@ -81,8 +81,11 @@ struct Link : LinkBase {
 	T      & operator *()       { return *node; }
 	T const& operator *() const { return *node; }
 
-	operator T      * ()        { return node; }
-	operator T const* () const  { return node; }
+	T      * get()       { return node; }
+	T const* get() const { return node; }
+
+	operator bool() const { return node != nullptr; }
+
 private:
 	T* node {nullptr};
 };
