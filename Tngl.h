@@ -18,8 +18,8 @@ struct Tngl final {
 	~Tngl();
 
 	template<typename T=Node>
-	T* getNodeByName(std::string const& name) {
-		return dynamic_cast<T*>(getNodeByName_(name));
+	T* getNodeByName(std::string const& name) const {
+		return dynamic_cast<T*>(getNodeByNameImpl(name));
 	}
 
 	void initialize(ExceptionHandler const& errorHandler);
@@ -27,7 +27,7 @@ struct Tngl final {
 
 	std::map<std::string, Node*> getNodes() const;
 private:
-	Node* getNodeByName_(std::string const& name);
+	Node* getNodeByNameImpl(std::string const& name) const;
 	struct Pimpl;
 	std::unique_ptr<Pimpl> pimpl;
 };

@@ -175,7 +175,7 @@ Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHand
 
 Tngl::~Tngl() {}
 
-Node* Tngl::getNodeByName_(std::string const& name) {
+Node* Tngl::getNodeByNameImpl(std::string const& name) const {
 	auto it = pimpl->nodes.find(name);
 	if (it != pimpl->nodes.end()) {
 		auto val = it->second.get();
