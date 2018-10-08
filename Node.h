@@ -1,24 +1,19 @@
 #pragma once
 
-#include "Factory.h"
-
-#include "Link.h"
-
 #include <algorithm>
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
 
-namespace tngl
-{
+namespace tngl {
 
 struct LinkBase;
 
 struct Node {
 private:
 	std::vector<LinkBase*> links;
-public:
 
+public:
 	virtual ~Node() = default;
 
 	virtual void initializeNode() {};

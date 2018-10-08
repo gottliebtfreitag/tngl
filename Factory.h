@@ -3,9 +3,9 @@
 #include "Registry.h"
 
 #include <functional>
-#include <string>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
 
 namespace tngl {
 

@@ -1,9 +1,7 @@
 #include "Link.h"
 #include "Node.h"
 
-namespace tngl
-{
-
+namespace tngl {
 
 LinkBase::LinkBase(Node* _owner, Flags _flags, std::string const& _regex)
 	: flags(_flags)

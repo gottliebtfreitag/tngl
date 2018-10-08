@@ -9,12 +9,9 @@
 #include <cxxabi.h>
 #include <iostream>
 
-namespace tngl
-{
+namespace tngl {
 
-
-namespace
-{
+namespace {
 
 bool is_ancestor(std::type_info const& a, std::type_info const& b);
 bool walk_tree(const __cxxabiv1:: __si_class_type_info *si, std::type_info const& a) {

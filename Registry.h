@@ -4,9 +4,5 @@
 
 #include <map>
 #include <set>
-#include <utility>
 #include <stdexcept>
-
-namespace registry
-{
-}
+#include <utility>

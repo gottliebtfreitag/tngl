@@ -1,15 +1,16 @@
 #pragma once
 
+#include "Exceptions.h"
 #include "Node.h"
+#include "Link.h"
+#include "Factory.h"
 
+#include <memory>
 #include <set>
 #include <string>
-#include <memory>
 
-#include "Exceptions.h"
 
-namespace tngl
-{
+namespace tngl {
 
 struct Tngl final {
 	using ExceptionHandler = std::function<void(std::exception const&)>;

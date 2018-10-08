@@ -1,19 +1,17 @@
 #pragma once
 
-#include "Node.h"
-
 #include <regex>
 #include <cstddef>
 #include <typeinfo>
 
-namespace tngl
-{
+namespace tngl {
+
 struct Node;
 
 enum class Flags : int {
 	None = 0,
-	CreateIfNotExist=1,
-	Required=2
+	CreateIfNotExist = 1,
+	Required = 2,
 };
 constexpr Flags operator|(Flags const& l, Flags const& r) {
 	return static_cast<Flags>(static_cast<int>(l) | static_cast<int>(r));
