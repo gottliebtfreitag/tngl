@@ -30,7 +30,7 @@ struct LinkBase {
 
 	virtual bool canSetOther(Node const*) const = 0;
 	virtual void setOther(Node*) = 0;
-	virtual bool satisfied() = 0;
+	virtual bool satisfied() const = 0;
 
 	virtual bool isConnectedTo(Node const*) const = 0;
 
@@ -67,7 +67,7 @@ struct Link : LinkBase {
 		}
 	}
 
-	bool satisfied() override {
+	bool satisfied() const override {
 		return node;
 	}
 
@@ -112,7 +112,7 @@ public:
 		}
 	}
 
-	bool satisfied() override {
+	bool satisfied() const override {
 		return false;
 	}
 
@@ -121,7 +121,7 @@ public:
 		return it != nodes.end();
 	}
 
-	std::vector<T*> const& getNodes() {
+	std::vector<T*> const& getNodes() const {
 		return nodes;
 	}
 
