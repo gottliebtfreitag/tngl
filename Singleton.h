@@ -11,6 +11,8 @@ struct Singleton {
 protected:
 	Singleton() = default;
 	~Singleton() = default;
+
+	Singleton(Singleton const&) = delete;
 };
 
 }
