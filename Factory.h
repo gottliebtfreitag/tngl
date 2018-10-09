@@ -19,68 +19,48 @@ struct NodeBuilderBase {
 		}
 	};
 private:
-	std::function<std::unique_ptr<Node>()> _createFunc;
 	std::string _name;
+	std::type_info const& _info;
+	std::function<std::unique_ptr<Node>()> _createFunc;
 
-	void registerThis() noexcept {
-		NodeBuilderRegistry::getInstance().builders.emplace(_name, this);
-	}
-	void unregisterThis() noexcept {
-		auto& builders = NodeBuilderRegistry::getInstance().builders;
-		auto it = builders.find(_name);
-		if (it != builders.end() and it->second == this) {
-			builders.erase(it);
-		}
-	}
 public:
 	template<typename Func>
-	NodeBuilderBase(std::string const& name, Func f)
-		: _createFunc{[=]{ return std::unique_ptr<Node>{f()};}}
-		, _name{name} {
-		registerThis();
+	NodeBuilderBase(std::string name, std::type_info const& info, Func f)
+		: _name{std::move(name)}
+		, _info{info}
+		, _createFunc{[=] { return std::unique_ptr<Node>{f()}; }} {
+		NodeBuilderRegistry::getInstance().builders.emplace(_name, this);
 	}
 
-	NodeBuilderBase& operator=(NodeBuilderBase && other) noexcept {
-		unregisterThis();
-		other.unregisterThis();
-		std::swap(_createFunc, other._createFunc);
-		std::swap(_name, other._name);
-		registerThis();
-		return *this;
-	}
-	NodeBuilderBase(NodeBuilderBase && other) noexcept {
-		*this = std::move(other);
-	}
+	NodeBuilderBase(NodeBuilderBase const&) = delete;
+	NodeBuilderBase& operator=(NodeBuilderBase const&) = delete;
 	~NodeBuilderBase() {
-		unregisterThis();
+		NodeBuilderRegistry::getInstance().builders.erase(_name);
 	}
 
-	std::unique_ptr<Node> create() {
+	std::unique_ptr<Node> create() const {
 		return _createFunc();
 	}
 
-	virtual std::type_info const& getType() const = 0;
+	std::type_info const& getType() const {
+		return _info;
+	}
 };
 
 template<typename T>
 struct NodeBuilder : NodeBuilderBase {
 	using NodeBuilderBase::NodeBuilderBase;
 
-	NodeBuilder(NodeBuilder && other) noexcept
-		: NodeBuilderBase(std::move(other))
+	NodeBuilder(std::string const& name)
+		: NodeBuilderBase(name, typeid(T), []{
+			return std::make_unique<T>();
+		})
 	{}
-	NodeBuilder& operator=(NodeBuilder && other) noexcept {
-		NodeBuilderBase::operator =(std::move(other));
-		return *this;
-	}
 
-	NodeBuilder(std::string const& name) : NodeBuilderBase(name, []{return std::make_unique<T>();}) {}
-
-	virtual ~NodeBuilder() = default;
-	std::type_info const& getType() const override {
-		return typeid(T);
-	}
-
+	template <typename Func>
+	NodeBuilder(std::string const& name, Func f)
+		: NodeBuilderBase(name, typeid(T), f)
+	{}
 };
 
 }
