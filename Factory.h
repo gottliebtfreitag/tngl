@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Registry.h"
+#include "Singleton.h"
 
 #include <functional>
 #include <map>
@@ -10,10 +10,12 @@
 namespace tngl {
 
 struct Node;
+struct NodeBuilderBase;
+
+using NodeBuilderRegistry = Singleton<std::map<std::string, NodeBuilderBase*>>;
+
 struct NodeBuilderBase {
-	struct NodeBuilderRegistry : Singleton<NodeBuilderRegistry> {
-		std::map<std::string, NodeBuilderBase*> builders;
-	};
+
 private:
 	std::string _name;
 	std::type_info const& _info;
@@ -25,13 +27,13 @@ public:
 		: _name{std::move(name)}
 		, _info{info}
 		, _createFunc{[=] { return std::unique_ptr<Node>{f()}; }} {
-		NodeBuilderRegistry::getInstance().builders.emplace(_name, this);
+		NodeBuilderRegistry::getInstance().emplace(_name, this);
 	}
 
 	NodeBuilderBase(NodeBuilderBase const&) = delete;
 	NodeBuilderBase& operator=(NodeBuilderBase const&) = delete;
 	~NodeBuilderBase() {
-		NodeBuilderRegistry::getInstance().builders.erase(_name);
+		NodeBuilderRegistry::getInstance().erase(_name);
 	}
 
 	std::unique_ptr<Node> create() const {

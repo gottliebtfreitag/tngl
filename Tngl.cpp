@@ -55,7 +55,7 @@ struct Tngl::Pimpl {
 Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHandler)
 	: pimpl(new Pimpl)
 {
-	auto const& creatables = NodeBuilderBase::NodeBuilderRegistry::getInstance().builders;
+	auto const& creatables = NodeBuilderRegistry::getInstance();
 
 	std::set<std::string> to_create_queue;
 	for (auto const& name : names) {
