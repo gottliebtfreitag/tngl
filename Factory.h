@@ -11,12 +11,8 @@ namespace tngl {
 
 struct Node;
 struct NodeBuilderBase {
-	struct NodeBuilderRegistry {
+	struct NodeBuilderRegistry : Singleton<NodeBuilderRegistry> {
 		std::map<std::string, NodeBuilderBase*> builders;
-		static NodeBuilderRegistry& getInstance() {
-			static NodeBuilderRegistry instance;
-			return instance;
-		}
 	};
 private:
 	std::string _name;
