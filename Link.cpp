@@ -9,9 +9,6 @@ LinkBase::LinkBase(Node* _owner, Flags _flags, std::string const& _regex)
 	, owner(_owner)
 {
 	if (regexStr == "") {
-		if (Flags::None != (flags & Flags::CreateIfNotExist)) {
-			throw std::runtime_error("must not pass empty regex to conjunction if specified Flags::CreateIfNotExist");
-		}
 		// default to a match all in other cases
 		regexStr = ".*";
 	}

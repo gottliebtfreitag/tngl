@@ -12,6 +12,7 @@ enum class Flags : int {
 	None = 0,
 	CreateIfNotExist = 1,
 	Required = 2,
+	CreateRequired = 3,
 };
 constexpr Flags operator|(Flags const& l, Flags const& r) {
 	return static_cast<Flags>(static_cast<int>(l) | static_cast<int>(r));

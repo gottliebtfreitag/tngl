@@ -175,13 +175,14 @@ Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHand
 
 Tngl::~Tngl() {}
 
-Node* Tngl::getNodeByNameImpl(std::string const& name) const {
-	auto it = pimpl->nodes.find(name);
-	if (it != pimpl->nodes.end()) {
-		auto val = it->second.get();
-		return val;
+std::vector<Node*> Tngl::getNodesImpl(std::regex const& regex) const {
+	std::vector<Node*> nodes;
+	for (auto &node : pimpl->nodes) {
+		if (std::regex_match(node.first, regex)) {
+			nodes.emplace_back(node.second.get());
+		}
 	}
-	return nullptr;
+	return nodes;
 }
 
 void Tngl::initialize(ExceptionHandler const& errorHandler) {
