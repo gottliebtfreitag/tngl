@@ -160,7 +160,7 @@ Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHand
 		for (auto link : node.second->getLinks()) {
 			for (auto& other_node : nodes) {
 				if (link->matchesName(other_node.first)) {
-					link->setOther(other_node.second.get());
+					link->setOther(other_node.second.get(), other_node.first);
 				}
 				if (link->satisfied()) {
 					break;
@@ -175,11 +175,11 @@ Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHand
 
 Tngl::~Tngl() {}
 
-std::vector<Node*> Tngl::getNodesImpl(std::regex const& regex) const {
-	std::vector<Node*> nodes;
+std::map<std::string, Node*> Tngl::getNodesImpl(std::regex const& regex) const {
+	std::map<std::string, Node*> nodes;
 	for (auto &node : pimpl->nodes) {
 		if (std::regex_match(node.first, regex)) {
-			nodes.emplace_back(node.second.get());
+			nodes.emplace(node.first, node.second.get());
 		}
 	}
 	return nodes;

@@ -29,8 +29,8 @@ struct LinkBase {
 		return flags;
 	}
 
-	virtual bool canSetOther(Node const*) const = 0;
-	virtual void setOther(Node*) = 0;
+	virtual bool canSetOther(Node const* other) const = 0;
+	virtual void setOther(Node* other, std::string const& name) = 0;
 	virtual bool satisfied() const = 0;
 
 	virtual bool isConnectedTo(Node const*) const = 0;
@@ -53,6 +53,11 @@ private:
 
 template<typename T=Node>
 struct Link : LinkBase {
+private:
+	T* node {nullptr};
+	std::string otherName;
+public:
+
 	using LinkBase::LinkBase;
 
 	std::type_info const& getType() const override {
@@ -61,10 +66,11 @@ struct Link : LinkBase {
 	bool canSetOther(Node const* other) const override {
 		return dynamic_cast<T const*>(other);
 	}
-	void setOther(Node* other) override {
+	void setOther(Node* other, std::string const& name) override {
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
 			node = otherCast;
+			otherName = name;
 		}
 	}
 
@@ -87,14 +93,15 @@ struct Link : LinkBase {
 
 	operator bool() const { return node != nullptr; }
 
-private:
-	T* node {nullptr};
+	auto getOtherName() const -> decltype(otherName) const& {
+		return otherName;
+	}
 };
 
 template<typename T=Node>
 struct Links : LinkBase {
 private:
-	std::vector<T*> nodes;
+	std::map<std::string, T*> nodes;
 public:
 	Links(Node* owner, std::string const& _regex=".*")
 	: LinkBase(owner, Flags::None, _regex)
@@ -109,10 +116,10 @@ public:
 	bool canSetOther(Node const* other) const override {
 		return dynamic_cast<T const*>(other);
 	}
-	void setOther(Node* other) override {
+	void setOther(Node* other, std::string const& name) override {
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
-			nodes.emplace_back(otherCast);
+			nodes.emplace(name, otherCast);
 		}
 	}
 
@@ -121,11 +128,11 @@ public:
 	}
 
 	bool isConnectedTo(Node const* other) const override {
-		auto it = std::find_if(nodes.begin(), nodes.end(), [&](T const* o) { return other == dynamic_cast<Node const*>(o);});
+		auto it = std::find_if(nodes.begin(), nodes.end(), [&](auto o) { return other == dynamic_cast<Node const*>(o.second);});
 		return it != nodes.end();
 	}
 
-	std::vector<T*> const& getNodes() const {
+	auto getNodes() const -> decltype(nodes) const& {
 		return nodes;
 	}
 
