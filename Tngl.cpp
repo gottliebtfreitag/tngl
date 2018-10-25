@@ -51,55 +51,51 @@ struct Tngl::Pimpl {
 	std::map<std::string, std::unique_ptr<Node>> nodes;
 };
 
-
-Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHandler)
+Tngl::Tngl(Node const& seedNode, ExceptionHandler const& errorHandler)
 	: pimpl(new Pimpl)
 {
-	auto const& creatables = NodeBuilderRegistry::getInstance();
-
-	std::set<std::string> to_create_queue;
-	for (auto const& name : names) {
-		std::regex regex{name};
-		bool foundAny = false;
-		for (auto const& creatable : creatables) {
-			if (std::regex_match(creatable.first, regex)) {
-				to_create_queue.insert(creatable.first);
-				foundAny = true;
-			}
-		}
-		if (not foundAny) {
-			if (errorHandler) {
-				errorHandler(NodeNotCreatableError(name, "there is no creator for nodes matching pattern: \"" + name + "\""));
-			}
-		}
-	}
-
+	auto const& creators = NodeBuilderRegistry::getInstance();
 	auto& nodes = pimpl->nodes;
-	// build all nodes
-	while (not to_create_queue.empty()) {
-		auto to_create = *to_create_queue.begin();
-		to_create_queue.erase(to_create_queue.begin());
-		// avoid recreation
-		if (nodes.find(to_create) != nodes.end()) {
-			continue;
+
+	std::vector<LinkBase*> links = seedNode.getLinks();
+	std::set<std::string> brokenCreators;
+
+	auto findCreatorForLink = [&](LinkBase const* link) {
+		return std::find_if(creators.begin(), creators.end(), [&](auto const& creator) {
+			return  (link->getFlags() & Flags::CreateIfNotExist) == Flags::CreateIfNotExist and
+					link->matchesName(creator.first) and // if the name matches
+					brokenCreators.find(creator.first) == brokenCreators.end() and // if we did not try to create it before
+					nodes.find(creator.first) == nodes.end() and // if it is not created yet
+					is_ancestor(link->getType(), creator.second->getType()); // if the type matches
+		});
+	};
+
+	while (true) {
+		// find a link that can be set
+		auto linkIt = std::find_if(links.begin(), links.end(), [&](LinkBase const* link) {
+			return not link->satisfied() and
+					findCreatorForLink(link) != creators.end();
+		});
+
+		if (linkIt == links.end()) {
+			break; // we've exhausted the things to create
 		}
-		auto it = creatables.find(to_create);
-		if (it == creatables.end()) {
-			if (errorHandler) {
-				errorHandler(NodeNotCreatableError(to_create, "there is no creator for nodes with name: \"" + to_create + "\""));
-			}
-			continue;
+		auto creatorIt = findCreatorForLink(*linkIt);
+		if (creatorIt == creators.end()) {
+			// if at one point we decided to build a node but cannot do so now something is terribly broken
+			throw std::runtime_error("fatal internal error");
 		}
 		// build the new node
 		std::unique_ptr<Node> newNode;
 		try {
-			 newNode = it->second->create();
-			 if (not newNode) {
-				 throw std::runtime_error("cannot create node with name: \"" + to_create + "\"");
-			 }
+			newNode = creatorIt->second->create();
+			if (not newNode) {
+				throw std::runtime_error("cannot create node with name: \"" + creatorIt->first + "\"");
+			}
 		} catch (...) {
+			brokenCreators.insert(creatorIt->first);
 			try {
-				std::throw_with_nested(NodeNotCreatableError{it->first, "cannot create: \"" + it->first + "\""});
+				std::throw_with_nested(NodeNotCreatableError{creatorIt->first, "cannot create: \"" + creatorIt->first + "\""});
 			} catch (std::exception const& error) {
 				if (errorHandler) {
 					errorHandler(error);
@@ -107,69 +103,46 @@ Tngl::Tngl(std::set<std::string> const& names, ExceptionHandler const& errorHand
 			}
 			continue;
 		}
+		// set the link to the newly built node
 
-		// add all links which are not created yet to the create queue
-		for (auto const link : newNode->getLinks()) {
-			if (Flags::None != (link->getFlags() & Flags::CreateIfNotExist)) {
-				for (auto const& creatable : creatables) {
-					if (link->matchesName(creatable.first)) {
-						// if we didn't create the related element already we need to enqueue it
-						if (nodes.find(creatable.first) == nodes.end() and is_ancestor(link->getType(), creatable.second->getType())) {
-							to_create_queue.insert(creatable.first);
-						}
-					}
-				}
+		// put all new links into the set of all links
+		std::copy(newNode->getLinks().begin(), newNode->getLinks().end(), std::back_inserter(links));
+
+		// apply newNode to as many links as possible
+		for (auto link : links) {
+			if (not link->satisfied() and link->matchesName(creatorIt->first)) {
+				link->setOther(newNode.get(), creatorIt->first);
 			}
 		}
-		pimpl->nodes.emplace(to_create, std::move(newNode));
+		nodes.emplace(creatorIt->first, std::move(newNode));
 	}
+
 	// drop all nodes whose required links cannot be satisfied
 	while (true) {
-		std::vector<LinkBase*> unsatisfiedLinks;
-		auto it = std::find_if(nodes.begin(), nodes.end(), [&](std::pair<std::string const, std::unique_ptr<Node>> const& node) {
-			bool canSatisfyAll = true;
-			for (auto const& link: node.second->getLinks()) {
-				if (tngl::Flags::Required == (link->getFlags() & tngl::Flags::Required)) {
-					bool canSatisfy = false;
-					for (auto const& otherNode : nodes) {
-						if (link->matchesName(otherNode.first) and
-							link->canSetOther(otherNode.second.get())) {
-							canSatisfy = true;
-							break;
-						}
-					}
-					if (not canSatisfy) {
-						unsatisfiedLinks.push_back(link);
-						canSatisfyAll = false;
-					}
-				}
-			}
-			return not canSatisfyAll;
+		auto isUnsatisfied = [](auto link) {
+			return not link->satisfied() and (link->getFlags() & Flags::Required) == Flags::Required;
+		};
+		auto it = std::find_if(nodes.begin(), nodes.end(), [&](auto const& node) {
+			auto const& links = node.second->getLinks();
+			return std::find_if(links.begin(), links.end(), isUnsatisfied) != links.end();
 		});
 		if (it == nodes.end()) {
 			break;
 		}
+
 		if (errorHandler) {
+			// find all unsatisfied links and report them to the handler
+			std::vector<LinkBase*>unsatisfiedLinks;
+			auto const& links = it->second->getLinks();
+			std::copy_if(links.begin(), links.end(), std::back_inserter(unsatisfiedLinks), isUnsatisfied);
 			errorHandler(NodeLinksNotSatisfiedError{std::move(unsatisfiedLinks), it->second.get(), "cannot create a valid environment for " + it->first});
 		}
+		// unlink all links to it
+		std::for_each(nodes.begin(), nodes.end(), [&](auto& node) {
+			auto& links = node.second->getLinks();
+			std::for_each(links.begin(), links.end(), [&](auto link) {link->unset(it->second.get());});
+		});
 		nodes.erase(it);
-	}
-
-	// associate all links
-	for (auto& node : nodes) {
-		for (auto link : node.second->getLinks()) {
-			for (auto& other_node : nodes) {
-				if (link->matchesName(other_node.first)) {
-					link->setOther(other_node.second.get(), other_node.first);
-				}
-				if (link->satisfied()) {
-					break;
-				}
-			}
-			if (not link->satisfied() and Flags::None != (link->getFlags() & Flags::Required)) {
-				throw std::runtime_error("cannot satisfy required conjunction of " + node.first);
-			}
-		}
 	}
 }
 

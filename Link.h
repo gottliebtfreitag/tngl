@@ -30,6 +30,7 @@ struct LinkBase {
 	}
 
 	virtual bool canSetOther(Node const* other) const = 0;
+	virtual void unset(Node const* other) = 0;
 	virtual void setOther(Node* other, std::string const& name) = 0;
 	virtual bool satisfied() const = 0;
 
@@ -71,6 +72,12 @@ public:
 		if (otherCast) {
 			node = otherCast;
 			otherName = name;
+		}
+	}
+	void unset(Node const* other) override {
+		if (dynamic_cast<T const*>(other) == node) {
+			node = nullptr;
+			otherName = "";
 		}
 	}
 
@@ -120,6 +127,16 @@ public:
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
 			nodes.emplace(name, otherCast);
+		}
+	}
+	void unset(Node const* other) override {
+		auto find = [=](auto const& p) { return p.second == dynamic_cast<T const*>(other); };
+		while (true) {
+			auto it = std::find_if(nodes.begin(), nodes.end(), find);
+			if (it == nodes.end()) {
+				break;
+			}
+			nodes.erase(it);
 		}
 	}
 
