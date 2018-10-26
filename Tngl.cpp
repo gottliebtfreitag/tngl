@@ -51,7 +51,7 @@ struct Tngl::Pimpl {
 	std::map<std::string, std::unique_ptr<Node>> nodes;
 };
 
-Tngl::Tngl(Node const& seedNode, ExceptionHandler const& errorHandler)
+Tngl::Tngl(Node& seedNode, ExceptionHandler const& errorHandler)
 	: pimpl(new Pimpl)
 {
 	auto const& creators = NodeBuilderRegistry::getInstance();
@@ -114,14 +114,37 @@ Tngl::Tngl(Node const& seedNode, ExceptionHandler const& errorHandler)
 				link->setOther(newNode.get(), creatorIt->first);
 			}
 		}
+		// set the links of newNode to everything we have created so far
+		for (auto link : newNode->getLinks()) {
+			for (auto& node : nodes) {
+				if (link->matchesName(node.first)) {
+					link->setOther(node.second.get(), node.first);
+				}
+			}
+		}
 		nodes.emplace(creatorIt->first, std::move(newNode));
 	}
 
 	// drop all nodes whose required links cannot be satisfied
+	auto isUnsatisfied = [](auto link) {
+		return not link->satisfied() and (link->getFlags() & Flags::Required) == Flags::Required;
+	};
+	auto handleBadNode = [&](Node &node, std::string const& name) {
+		if (errorHandler) {
+			// find all unsatisfied links and report them to the handler
+			std::vector<LinkBase*>unsatisfiedLinks;
+			auto const& links = node.getLinks();
+			std::copy_if(links.begin(), links.end(), std::back_inserter(unsatisfiedLinks), isUnsatisfied);
+			errorHandler(NodeLinksNotSatisfiedError{std::move(unsatisfiedLinks), &node, "cannot create a valid environment for " + name});
+		}
+		// unlink all links to it
+		std::for_each(nodes.begin(), nodes.end(), [&](auto& otherNode) {
+			auto const& links = otherNode.second->getLinks();
+			std::for_each(links.begin(), links.end(), [&](auto link) {link->unset(&node);});
+		});
+	};
+
 	while (true) {
-		auto isUnsatisfied = [](auto link) {
-			return not link->satisfied() and (link->getFlags() & Flags::Required) == Flags::Required;
-		};
 		auto it = std::find_if(nodes.begin(), nodes.end(), [&](auto const& node) {
 			auto const& links = node.second->getLinks();
 			return std::find_if(links.begin(), links.end(), isUnsatisfied) != links.end();
@@ -129,20 +152,15 @@ Tngl::Tngl(Node const& seedNode, ExceptionHandler const& errorHandler)
 		if (it == nodes.end()) {
 			break;
 		}
-
-		if (errorHandler) {
-			// find all unsatisfied links and report them to the handler
-			std::vector<LinkBase*>unsatisfiedLinks;
-			auto const& links = it->second->getLinks();
-			std::copy_if(links.begin(), links.end(), std::back_inserter(unsatisfiedLinks), isUnsatisfied);
-			errorHandler(NodeLinksNotSatisfiedError{std::move(unsatisfiedLinks), it->second.get(), "cannot create a valid environment for " + it->first});
-		}
-		// unlink all links to it
-		std::for_each(nodes.begin(), nodes.end(), [&](auto& node) {
-			auto& links = node.second->getLinks();
-			std::for_each(links.begin(), links.end(), [&](auto link) {link->unset(it->second.get());});
-		});
+		handleBadNode(*it->second.get(), it->first);
 		nodes.erase(it);
+	}
+	// test if the requires of the seed note are satisfied
+	{
+		auto const& seedLinks = seedNode.getLinks();
+		if (seedLinks.end() != std::find_if(seedLinks.begin(), seedLinks.end(), isUnsatisfied)) {
+			handleBadNode(seedNode, "seedNode");
+		}
 	}
 }
 

@@ -14,7 +14,7 @@ namespace tngl {
 
 struct Tngl final {
 	using ExceptionHandler = std::function<void(std::exception const&)>;
-	Tngl(Node const& seedNode, ExceptionHandler const& errorHandler);
+	Tngl(Node& seedNode, ExceptionHandler const& errorHandler);
 	~Tngl();
 
 	template<typename T=Node>
