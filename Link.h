@@ -9,7 +9,7 @@ namespace tngl {
 struct Node;
 
 enum class Flags : int {
-	None = 0,
+	Optional = 0,
 	CreateIfNotExist = 1,
 	Required = 2,
 	CreateRequired = 3,
@@ -22,7 +22,7 @@ constexpr Flags operator&(Flags const& l, Flags const& r) {
 }
 
 struct LinkBase {
-	LinkBase(Node* owner, Flags _flags=Flags::None, std::string const& _regex="");
+	LinkBase(Node* owner, Flags _flags=Flags::Optional, std::string const& _regex="");
 	LinkBase(LinkBase&&) noexcept;
 	LinkBase& operator=(LinkBase&&) noexcept;
 
@@ -49,7 +49,7 @@ struct LinkBase {
 		return regexStr;
 	}
 private:
-	Flags flags {Flags::None};
+	Flags flags {Flags::Optional};
 	std::regex regex;
 	std::string regexStr;
 	Node* owner {nullptr};
@@ -117,7 +117,7 @@ private:
 	std::map<std::string, T*> nodes;
 public:
 	Links(Node* owner, std::string const& _regex=".*")
-	: LinkBase(owner, Flags::None, _regex)
+	: LinkBase(owner, Flags::Optional, _regex)
 	{}
 	Links(Node* owner, Flags flags, std::string const& _regex=".*")
 	: LinkBase(owner, flags, _regex)
