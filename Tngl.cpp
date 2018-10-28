@@ -179,6 +179,7 @@ std::map<std::string, Node*> Tngl::getNodesImpl(std::regex const& regex) const {
 void Tngl::initialize(ExceptionHandler const& errorHandler) {
 	for (auto& b : pimpl->nodes) {
 		try {
+			std::cout << "init: " << b.first << "\n";
 			b.second->initializeNode();
 		} catch (...) {
 			try {
@@ -195,7 +196,7 @@ void Tngl::initialize(ExceptionHandler const& errorHandler) {
 
 void Tngl::deinitialize() {
 	for (auto& b : pimpl->nodes) {
-		std::cout << "init: " << b.first << "\n";
+		std::cout << "deinit: " << b.first << "\n";
 		b.second->deinitializeNode();
 	}
 }
