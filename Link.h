@@ -160,7 +160,10 @@ public:
 	}
 
 	auto begin() -> decltype(nodes.begin()) { return nodes.begin(); }
-	auto end() -> decltype(nodes.end()) { return nodes.end(); }
+	auto end()   -> decltype(nodes.end())   { return nodes.end(); }
+
+	auto begin() const -> decltype(nodes.cbegin()) { return nodes.cbegin(); }
+	auto end()   const -> decltype(nodes.cend())   { return nodes.cend(); }
 
 };
 
