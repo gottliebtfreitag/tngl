@@ -189,7 +189,20 @@ void Tngl::initialize(ExceptionHandler const& errorHandler) {
 					errorHandler(error);
 				}
 			}
-			continue;
+		}
+	}
+
+	for (auto& b : pimpl->nodes) {
+		try {
+			b.second->startNode();
+		} catch (...) {
+			try {
+				std::throw_with_nested(NodeInitializeError{b.second.get(), b.first, "\"" + b.first + "\" threw during initialization"});
+			} catch (std::exception const& error) {
+				if (errorHandler) {
+					errorHandler(error);
+				}
+			}
 		}
 	}
 }

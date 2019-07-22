@@ -17,6 +17,7 @@ public:
 	virtual ~Node() = default;
 
 	virtual void initializeNode() {};
+	virtual void startNode() {};
 	virtual void deinitializeNode() noexcept {};
 
 	auto getLinks() const -> decltype(links) const& {
