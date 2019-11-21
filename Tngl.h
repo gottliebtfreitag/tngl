@@ -6,6 +6,7 @@
 #include "Factory.h"
 
 #include <memory>
+#include <vector>
 #include <set>
 #include <string>
 
@@ -15,6 +16,7 @@ namespace tngl {
 struct Tngl final {
 	using ExceptionHandler = std::function<void(std::exception const&)>;
 	Tngl(Node& seedNode, ExceptionHandler const& errorHandler);
+	Tngl(std::vector<Node*> const& seedNodes, ExceptionHandler const& errorHandler);
 	~Tngl();
 
 	template<typename T=Node>

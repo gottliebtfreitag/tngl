@@ -51,13 +51,20 @@ struct Tngl::Pimpl {
 	std::map<std::string, std::unique_ptr<Node>> nodes;
 };
 
+
 Tngl::Tngl(Node& seedNode, ExceptionHandler const& errorHandler)
+    : Tngl({&seedNode}, errorHandler)
+{}
+Tngl::Tngl(std::vector<Node*> const& seedNodes, ExceptionHandler const& errorHandler) 
 	: pimpl(new Pimpl)
 {
 	auto const& creators = NodeBuilderRegistry::getInstance();
 	auto& nodes = pimpl->nodes;
 
-	std::vector<LinkBase*> links = seedNode.getLinks();
+	std::vector<LinkBase*> links;
+    for (auto const* seedNode : seedNodes) {
+        std::copy(begin(seedNode->getLinks()), end(seedNode->getLinks()), std::back_inserter(links));
+    };
 	std::set<std::string> brokenCreators;
 
 	auto findCreatorForLink = [&](LinkBase const* link) {
@@ -157,11 +164,13 @@ Tngl::Tngl(Node& seedNode, ExceptionHandler const& errorHandler)
 	}
 	// test if the requires of the seed note are satisfied
 	{
-		auto const& seedLinks = seedNode.getLinks();
-		if (seedLinks.end() != std::find_if(seedLinks.begin(), seedLinks.end(), isUnsatisfied)) {
-			handleBadNode(seedNode, "seedNode");
-		}
-	}
+        for (auto* seedNode : seedNodes) {
+            auto const& seedLinks = seedNode->getLinks();
+            if (seedLinks.end() != std::find_if(seedLinks.begin(), seedLinks.end(), isUnsatisfied)) {
+                handleBadNode(*seedNode, "seedNode");
+            }
+        }
+    }
 }
 
 Tngl::~Tngl() {}
