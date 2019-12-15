@@ -31,8 +31,8 @@ struct Tngl final {
 	}
 
 	template<typename T=Node>
-	std::map<std::string, T*> getNodes(std::regex const& regex) const {
-		std::map<std::string, T*> nodes;
+	std::multimap<std::string, T*> getNodes(std::regex const& regex) const {
+		std::multimap<std::string, T*> nodes;
 		for (auto const& node : getNodesImpl(regex)) {
 			T* cast = dynamic_cast<T*>(node.second);
 			if (cast) {
@@ -48,16 +48,16 @@ struct Tngl final {
 	}
 
 	template<typename T=Node>
-	std::map<std::string, T*> getNodes(std::string const& regex=".*") const {
+	std::multimap<std::string, T*> getNodes(std::string const& regex=".*") const {
 		return getNodes<T>(std::regex(regex));
 	}
 
 	void initialize(ExceptionHandler const& errorHandler);
 	void deinitialize();
 
-	std::map<std::string, Node*> getNodes() const;
+	std::multimap<std::string, Node*> getNodes() const;
 private:
-	std::map<std::string, Node*> getNodesImpl(std::regex const& regex) const;
+	std::multimap<std::string, Node*> getNodesImpl(std::regex const& regex) const;
 	struct Pimpl;
 	std::unique_ptr<Pimpl> pimpl;
 };

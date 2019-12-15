@@ -1,18 +1,19 @@
 #pragma once
 
 #include "Singleton.h"
+#include "Node.h"
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 namespace tngl {
 
-struct Node;
 struct NodeBuilderBase;
 
-using NodeBuilderRegistry = Singleton<std::map<std::string, NodeBuilderBase*>>;
+using NodeBuilderRegistry = Singleton<std::multimap<std::string, NodeBuilderBase const*>>;
 
 struct NodeBuilderBase {
 
@@ -51,7 +52,11 @@ struct NodeBuilder : NodeBuilderBase {
 
 	NodeBuilder(std::string const& name)
 		: NodeBuilderBase(name, typeid(T), []{
-			return std::make_unique<T>();
+            if constexpr (std::is_default_constructible_v<T>) {
+			    return std::make_unique<T>();
+            } else {
+                return nullptr;
+            }
 		})
 	{}
 
@@ -60,5 +65,18 @@ struct NodeBuilder : NodeBuilderBase {
 		: NodeBuilderBase(name, typeid(T), f)
 	{}
 };
+
+namespace detail {
+bool is_type_ancestor(const std::type_info& base, const std::type_info& deriv);
+}
+
+using Builders = NodeBuilderRegistry::value_type;
+Builders getBuildersForType(const std::type_info& base);
+
+// get all builders that can produce a specialization of T or a T itself
+template<typename T>
+Builders getBuildersForType() {
+    return getBuildersForType(typeid(T));
+}
 
 }

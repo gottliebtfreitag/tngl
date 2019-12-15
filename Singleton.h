@@ -4,8 +4,10 @@ namespace tngl {
 
 template<typename T>
 struct Singleton {
-	static T& getInstance() {
-		static T instance;
+    using value_type = T;
+
+	static value_type& getInstance() {
+		static value_type instance;
 		return instance;
 	}
 protected:
@@ -13,6 +15,9 @@ protected:
 	~Singleton() = default;
 
 	Singleton(Singleton const&) = delete;
+	Singleton(Singleton &&) = delete;
+	Singleton& operator=(Singleton const&) = delete;
+	Singleton& operator=(Singleton &&) = delete;
 };
 
 }

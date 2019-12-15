@@ -64,8 +64,8 @@ public:
 
 	using LinkBase::LinkBase;
 
-	Link(Link&&) = default;
-	Link& operator=(Link&&) = default;
+	Link(Link&&) noexcept = default;
+	Link& operator=(Link&&) noexcept = default;
 
 	std::type_info const& getType() const override {
 		return typeid(T);
@@ -114,7 +114,7 @@ public:
 template<typename T=Node>
 struct Links : LinkBase {
 private:
-	std::map<std::string, T*> nodes;
+	std::multimap<std::string, T*> nodes;
 public:
 	Links(Node* owner, std::string const& _regex=".*")
 	: LinkBase(owner, Flags::Optional, _regex)
@@ -132,11 +132,17 @@ public:
 	void setOther(Node* other, std::string const& name) override {
 		T* otherCast = dynamic_cast<T*>(other);
 		if (otherCast) {
-			nodes.emplace(name, otherCast);
+            // dont double insert a single instance
+		    auto find = [=](auto const& p) { return p.second == otherCast; };
+			auto it = std::find_if(nodes.begin(), nodes.end(), find);
+			if (it == nodes.end()) {
+			    nodes.emplace(name, otherCast);
+            }
 		}
 	}
 	void unset(Node const* other) override {
-		auto find = [=](auto const& p) { return p.second == dynamic_cast<T const*>(other); };
+		T const* otherCast = dynamic_cast<T const*>(other);
+		auto find = [=](auto const& p) { return p.second == otherCast; };
 		while (true) {
 			auto it = std::find_if(nodes.begin(), nodes.end(), find);
 			if (it == nodes.end()) {
