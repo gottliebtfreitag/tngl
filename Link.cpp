@@ -22,11 +22,20 @@ LinkBase::LinkBase(LinkBase&& other) noexcept {
 
 LinkBase& LinkBase::operator=(LinkBase&& other) noexcept
 {
+	if (owner) {
+		owner->removeLink(this);
+	}
+    
 	owner    = other.owner;
 	flags    = other.flags;
 	regexStr = std::move(other.regexStr);
 	regex    = std::move(other.regex);
-	owner->addLink(this);
+
+    if (owner) {
+	    owner->addLink(this);
+		other.owner->removeLink(&other);
+        other.owner = nullptr;
+	}
 	return *this;
 }
 

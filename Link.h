@@ -23,8 +23,6 @@ constexpr Flags operator&(Flags const& l, Flags const& r) {
 
 struct LinkBase {
 	LinkBase(Node* owner, Flags _flags=Flags::Optional, std::string const& _regex="");
-	LinkBase(LinkBase&&) noexcept;
-	LinkBase& operator=(LinkBase&&) noexcept;
 
 	virtual ~LinkBase();
 
@@ -48,6 +46,9 @@ struct LinkBase {
 	std::string const& getRegex() const {
 		return regexStr;
 	}
+protected:
+	LinkBase(LinkBase&&) noexcept;
+	LinkBase& operator=(LinkBase&&) noexcept;
 private:
 	Flags flags {Flags::Optional};
 	std::regex regex;
@@ -122,6 +123,9 @@ public:
 	Links(Node* owner, Flags flags, std::string const& _regex=".*")
 	: LinkBase(owner, flags, _regex)
 	{}
+
+	Links(Links&&) noexcept = default;
+	Links& operator=(Links&&) noexcept = default;
 
 	std::type_info const& getType() const override {
 		return typeid(T);
