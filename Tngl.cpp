@@ -186,31 +186,11 @@ void Tngl::initialize(ExceptionHandler const& errorHandler) {
 			}
 		}
     };
-    auto starter = [&](std::string const& name, Node* node) {
-		try {
-			node->startNode();
-		} catch (...) {
-			try {
-				std::throw_with_nested(NodeInitializeError{node, name, "\"" + name + "\" threw during start"});
-			} catch (std::exception const& error) {
-				if (errorHandler) {
-					errorHandler(error);
-				}
-			}
-		}
-    };
 	for (auto& node : pimpl->seedNodes) {
         initializer("seed_node", node);
     }
 	for (auto& [name, node] : pimpl->nodes) {
         initializer(name, node.get());
-	}
-
-	for (auto& node : pimpl->seedNodes) {
-        starter("seed_node", node);
-    }
-	for (auto& [name, node] : pimpl->nodes) {
-        starter(name, node.get());
 	}
 }
 
