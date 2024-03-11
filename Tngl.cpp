@@ -171,11 +171,16 @@ Tngl::Tngl(std::map<std::string, Node*> const& seedNodes, ExceptionHandler const
 Tngl::~Tngl() {}
 
 void Tngl::initialize(ExceptionHandler const& errorHandler) {
+    std::vector<Node*> initialized_nodes;
     auto initializer = [&](std::string const& name, Node* node) {
         try {
             std::cout << "init: " << name << "\n";
             node->initializeNode();
+            initialized_nodes.emplace_back(node);
         } catch (...) {
+            for (auto* n : initialized_nodes) {
+                n->deinitializeNode();
+            }
             try {
                 std::throw_with_nested(NodeInitializeError{node, name, "\"" + name + "\" threw during initialization"});
             } catch (std::exception const& error) {
